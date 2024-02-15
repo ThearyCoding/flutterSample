@@ -1,0 +1,123 @@
+StreamBuilder<QuerySnapshot>(
+        stream: _collectionCart.snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text(
+                'Your cart is empty',
+                style: TextStyle(fontSize: 20),
+              ),
+            );
+          }
+
+          final List<QueryDocumentSnapshot> documents = snapshot.data!.docs;
+          // double total = 0;
+          // for (int i = 0; i < documents.length; i++) {
+          //   final cartItem = documents[i].data() as Map<String, dynamic>;
+          //   total += cartItem['price'] * cartItem['qty'];
+          // }
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: snapshot.data!.docs.length,
+                  itemBuilder: (context, index) {
+                    final cartItem =
+                        documents[index].data() as Map<String, dynamic>;
+                    final List<dynamic>? imageUrls = cartItem['imageUrls'];
+
+                    return Slidable(
+                      key: Key(cartItem['id'].toString()),
+                      endActionPane: ActionPane(
+                        motion: StretchMotion(),
+                        children: [
+                          SlidableAction(
+                            flex: 1,
+                            backgroundColor: Colors.red,
+                            icon: Icons.delete,
+                            onPressed: (context) async {
+                              // Provider.of<CartProvider>(context, listen: false)
+                              //     .removeFromCart(cartItem);
+
+                              print(
+                                  'Deleting document with ID: ${cartItem['id']}');
+
+                              await FirebaseFirestore.instance
+                                  .collection('cart')
+                                  .doc(cartItem['id'])
+                                  .delete();
+                            },
+                          )
+                        ],
+                      ),
+                      child: Card(
+                        child: ListTile(
+                          title: Text(cartItem['name']),
+                          subtitle: Text('\$${cartItem['price']}'),
+                          leading: CachedNetworkImage(
+                            imageUrl: imageUrls?.isNotEmpty == true
+                                ? imageUrls![0]
+                                : 'https://static.vecteezy.com/system/resources/previews/005/337/799/original/icon-image-not-found-free-vector.jpg',
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                const CircularProgressIndicator(),
+                            errorWidget: (context, url, error) =>
+                                const Icon(Icons.error),
+                          ),
+                          trailing: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.add),
+                              SizedBox(width: 10,),
+                              Text("1"),
+                              SizedBox(width: 10,),
+                              Icon(Icons.remove),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    Text(
+                      "Total: ",
+                      style: TextStyle(fontSize: 17),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.6,
+                      height: MediaQuery.of(context).size.height / 17.0,
+                      child: ElevatedButton(
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.all(Colors.brown),
+                          shape: MaterialStateProperty.all(
+                              RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10))),
+                        ),
+                        onPressed: () {},
+                        child: const Text(
+                          "Check Out",
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),

@@ -1,0 +1,92 @@
+upload to Realtime firebase database
+final DatabaseReference _databaseRef =
+      // ignore: deprecated_member_use
+      FirebaseDatabase.instance.reference().child('users');
+  final picker = ImagePicker();
+
+  late TextEditingController nameController;
+  late TextEditingController priceController;
+  late TextEditingController descriptioncController;
+
+  String? imagePath;
+  File? imageFile;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController();
+    priceController = TextEditingController();
+    descriptioncController = TextEditingController();
+  }
+
+  Future<void> pickImage() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+
+    if (pickedFile != null) {
+      setState(() {
+        imagePath = pickedFile.path;
+        imageFile = File(imagePath!);
+      });
+    }
+  }
+
+  Future<void> uploadDataAndImage() async {
+    if (imagePath == null) {
+      // Handle the case where no image is selected
+      return;
+    }
+
+    final User user = User(
+      name: nameController.text,
+      price: int.parse(priceController.text),
+      description: descriptioncController.text,
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const Center(
+          child: CircularProgressIndicator(),
+        );
+      },
+    );
+
+    try {
+      // Upload image to Firebase Storage
+      final TaskSnapshot uploadTask = await FirebaseStorage.instance
+          .ref('user_images/${user.name}.jpg')
+          .putFile(File(imagePath!));
+
+      // Get download URL of the uploaded image
+      final String imageUrl = await uploadTask.ref.getDownloadURL();
+      DateTime dateTime = DateTime.now();
+      String formattedDate = DateFormat('MMM/dd/yyyy').format(dateTime);
+      // Save user data to Firebase Realtime Database
+      _databaseRef.push().set({
+        'name': user.name,
+        'price': user.price,
+        'description': user.description,
+        'imageUrl': imageUrl,
+        'datetime': formattedDate,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Data and Image uploaded successfully!'),
+        ),
+      );
+    } catch (e) {
+      print('Error uploading data and image: $e');
+      // Handle error (e.g., show an error message)
+    } finally {
+      // Clear text controllers and image path after upload (whether successful or not)
+      nameController.clear();
+      priceController.clear();
+      descriptioncController.clear();
+      setState(() {
+        imagePath = null;
+        imageFile = null;
+      });
+      Navigator.pop(context); // Close the progress indicator dialog
+    }
+  }
