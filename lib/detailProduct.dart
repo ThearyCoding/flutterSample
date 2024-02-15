@@ -8,9 +8,9 @@ import 'package:store_image/model/product.dart';
 class DetailApp extends StatelessWidget {
   final Product product;
 
-  DetailApp(this.product, {super.key});
-
   final CartController cartController = Get.find();
+
+  DetailApp(this.product, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +28,7 @@ class DetailApp extends StatelessWidget {
                 StretchMode.zoomBackground,
               ],
               // ignore: unnecessary_null_comparison
-              background: product.imageUrls != null
+              background: product.imageUrls?.isNotEmpty ?? true
                   ? CarouselSlider.builder(
                       options: CarouselOptions(
                         height: MediaQuery.of(context).size.height / 2.2,
@@ -40,15 +40,17 @@ class DetailApp extends StatelessWidget {
                             const Duration(milliseconds: 800),
                         viewportFraction: 1.0,
                       ),
-                      itemCount: product.imageUrls.length,
+                      itemCount: product.imageUrls?.length,
                       itemBuilder: (context, index, realIndex) {
-                        String imageUrl = product.imageUrls[index];
+                        String imageUrl = product.imageUrls?.isEmpty ?? true
+                            ? ""
+                            : product.imageUrls?.first ?? "";
                         return CachedNetworkImage(
                           imageUrl: imageUrl,
                           placeholder: (context, url) =>
                               const Center(child: CircularProgressIndicator()),
                           errorWidget: (context, url, error) =>
-                              Icon(Icons.error),
+                              const Icon(Icons.error),
                           fit: BoxFit.cover,
                           width: double.infinity,
                           height: double.infinity,
@@ -81,7 +83,6 @@ class DetailApp extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back),
               ),
             ),
-            
             leadingWidth: 80.0,
             bottom: PreferredSize(
               preferredSize: const Size.fromHeight(0.0),
@@ -96,7 +97,7 @@ class DetailApp extends StatelessWidget {
                   ),
                 ),
                 child: Container(
-                  margin: EdgeInsets.only(top: 10),
+                  margin: const EdgeInsets.only(top: 10),
                   width: 40.0,
                   height: 5.0,
                   decoration: BoxDecoration(
@@ -111,42 +112,40 @@ class DetailApp extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              '${product.name}',
-                              style: const TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Container(
-                          width: 100,
-                          height: 30,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                              color: Colors.grey.shade500.withOpacity(0.4),
-                              borderRadius: BorderRadius.circular(12)),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
                           child: Text(
-                            '\$${product.price}',
+                            product.name ?? "",
                             style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 16),
+                      Container(
+                        width: 100,
+                        height: 30,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                            color: Colors.grey.shade500.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Text(
+                          '\$${product.price}',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const Padding(
@@ -235,50 +234,39 @@ class DetailApp extends StatelessWidget {
                 const SizedBox(
                   height: 50,
                 ),
-                
               ],
             ),
           ),
           SliverToBoxAdapter(
-            child: Container(
-              child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    GestureDetector(
-                      onTap: () {
-                        // Check if the product is already in the cart
-                        if (cartController.isProductInCart(product)) {
-                          Get.snackbar("Product in Cart",
-                              "${product.name} is already in your cart",
-                              snackPosition: SnackPosition.BOTTOM);
-                        } else {
-                          // Add the product to the cart
-                          cartController.addProduct(product);
-                          Get.snackbar("Added to Cart",
-                              "${product.name} added to your cart",
-                              snackPosition: SnackPosition.BOTTOM);
-                        }
-                      },
-                      child: Container(
-                        alignment: Alignment.center,
-                        width: MediaQuery.of(context).size.width * 0.8,
-                        height: 50.0,
-                        margin: const EdgeInsets.only(
-                            left: 16.0, right: 16.0, top: 10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          color: Colors.brown.shade800,
-                        ),
-                        child: const Text(
-                          "Add to Cart",
-                          style: TextStyle(
-                            color: Colors.white,
-                          ),
-                        ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    cartController.addCartProduct(product);
+                    Get.snackbar(
+                        "Added to Cart", "${product.name} added to your cart",
+                        snackPosition: SnackPosition.BOTTOM);
+                  },
+                  child: Container(
+                    alignment: Alignment.center,
+                    width: MediaQuery.of(context).size.width * 0.8,
+                    height: 50.0,
+                    margin:
+                        const EdgeInsets.only(left: 16.0, right: 16.0, top: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      color: Colors.brown.shade800,
+                    ),
+                    child: const Text(
+                      "Add to Cart",
+                      style: TextStyle(
+                        color: Colors.white,
                       ),
                     ),
-                  ],
+                  ),
                 ),
+              ],
             ),
           )
         ],
