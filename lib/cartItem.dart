@@ -2,10 +2,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:store_image/Provider_Cart.dart';
-import 'package:store_image/model/product.dart';
 
 class CartItemList extends StatelessWidget {
   final CartController controller = Get.find();
+
+  CartItemList({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class CartItemList extends StatelessWidget {
       ),
       body: Obx(
         () => Visibility(
-          visible: controller.products.isNotEmpty,
+          visible: controller.products.values.toList().isNotEmpty,
           replacement: const Center(
             child: Text('Your cart is empty'),
           ),
@@ -37,15 +38,15 @@ class CartItemList extends StatelessWidget {
             height: 600,
             child: ListView.builder(
               shrinkWrap: true,
-              itemCount: controller.products.length,
+              itemCount: controller.products.values.toList().length,
               itemBuilder: (context, index) {
+                var model = controller.products.values.toList()[index];
                 return Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20.0, vertical: 10),
                   child: CartProductCard(
                     controller: controller,
-                    product: controller.products.keys.toList()[index],
-                    quantity: controller.products.values.toList()[index],
+                    product: model,
                     index: index,
                   ),
                 );
@@ -60,14 +61,13 @@ class CartItemList extends StatelessWidget {
 
 class CartProductCard extends StatelessWidget {
   final CartController controller;
-  final Product product;
-  final int quantity;
+  final dynamic product;
   final int index;
 
-  CartProductCard({
+  const CartProductCard({
+    super.key,
     required this.controller,
     required this.product,
-    required this.quantity,
     required this.index,
   });
 
@@ -77,7 +77,9 @@ class CartProductCard extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         CachedNetworkImage(
-          imageUrl: product.imageUrls[1],
+          imageUrl: product.imageUrls?.isNotEmpty ?? true
+              ? product.imageUrls?.first ?? ""
+              : "",
           imageBuilder: (context, imageProvider) => Container(
             width: 80.0,
             height: 80.0,
@@ -89,27 +91,23 @@ class CartProductCard extends StatelessWidget {
               ),
             ),
           ),
-          placeholder: (context, url) => CircularProgressIndicator(),
-          errorWidget: (context, url, error) => Icon(Icons.error),
+          placeholder: (context, url) => const CircularProgressIndicator(),
+          errorWidget: (context, url, error) => const Icon(Icons.error),
         ),
         Flexible(
           child: Text(
-            "${product.name}",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            product.name ?? "",
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        SizedBox(width: 80),
+        const SizedBox(width: 80),
         IconButton(
-            onPressed: () {
-              controller.addProduct(product);
-            },
-            icon: Icon(Icons.add_circle)),
-        Text("${quantity}"),
+            onPressed: () => controller.addCartProduct(product),
+            icon: const Icon(Icons.add_circle)),
+        Text("${product.quantity}"),
         IconButton(
-            onPressed: () {
-              controller.removeProduct(product);
-            },
-            icon: Icon(Icons.remove_circle)),
+            onPressed: () => controller.deleteProduct(product: product),
+            icon: const Icon(Icons.remove_circle)),
       ],
     );
   }
